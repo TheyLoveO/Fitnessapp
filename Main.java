@@ -43,7 +43,7 @@ public class Main {
             setBorder(new EmptyBorder(10, 16, 10, 16));
             addMouseListener(new java.awt.event.MouseAdapter() {
                 @Override public void mouseEntered(java.awt.event.MouseEvent e) { hover = true; repaint(); }
-                @Override public void mouseExited(java.awt.event.MouseEvent e)  { hover = false; repaint(); }
+                @Override public void mouseExited (java.awt.event.MouseEvent e) { hover = false; repaint(); }
                 @Override public void mousePressed(java.awt.event.MouseEvent e) { pressed = true; repaint(); }
                 @Override public void mouseReleased(java.awt.event.MouseEvent e){ pressed = false; repaint(); }
             });
@@ -100,10 +100,9 @@ public class Main {
         User(String email, String name) { this.email = email; this.name = name; }
     }
     static class Goal {
-        Integer dailyCaloriesTarget;
-        Integer weeklyWorkoutsTarget;
+        Integer dailyBurnTarget;   // NEW: calories to burn today
         @Override public String toString() {
-            return "Goal{dailyCaloriesTarget=" + dailyCaloriesTarget + ", weeklyWorkoutsTarget=" + weeklyWorkoutsTarget + "}";
+            return "Goal{dailyBurnTarget=" + dailyBurnTarget + "}";
         }
     }
 
@@ -111,16 +110,16 @@ public class Main {
         final UUID id = UUID.randomUUID();
         LocalDateTime startedAt = LocalDateTime.now();
         String type;            // Run, Lift, Cycle, Walk, Swim
-        String bodyPart;        // for Lift/strength (Chest/Back/Legs/...)
-        // Strength fields:
+        String bodyPart;        // for Lift/strength
+        // Strength
         String exerciseName;
         Integer sets;
         Integer reps;
-        // Cardio fields:
+        // Cardio
         String distanceUnit;    // "Miles" or "Steps"
-        Double distanceValue;   // miles if Miles; null if Steps
-        Integer steps;          // steps if Steps; null if Miles
-        // Shared:
+        Double distanceValue;
+        Integer steps;
+        // Shared
         int durationMin;
         int estimatedCalories;
 
@@ -165,7 +164,7 @@ public class Main {
         private final InMemoryStore store; WorkoutService(InMemoryStore s){store=s;}
         void logWorkout(User u, Workout w){ store.addWorkout(u.email, w); }
         List<Workout> listWorkouts(User u){ return store.getWorkouts(u.email); }
-        long countWorkoutsInWeek(User u, LocalDate weekStart) {
+        long countWorkoutsInWeek(User u, LocalDate weekStart) { // (not used anymore; kept for reference)
             LocalDate weekEnd = weekStart.plusDays(6);
             return listWorkouts(u).stream().filter(w -> {
                 LocalDate d = w.startedAt.toLocalDate();
@@ -179,7 +178,7 @@ public class Main {
         int dailyCalories(User u, LocalDate date){ return store.getNutrition(u.email).stream().filter(n -> n.loggedAt.toLocalDate().equals(date)).mapToInt(n -> n.calories).sum(); }
         List<NutritionEntry> listToday(User u){ LocalDate t=LocalDate.now(); return store.getNutrition(u.email).stream().filter(n -> n.loggedAt.toLocalDate().equals(t)).collect(Collectors.toList()); }
     }
-    static class GoalService { void setDailyCalories(User u, Integer k){u.goal.dailyCaloriesTarget=k;} void setWeeklyWorkouts(User u, Integer c){u.goal.weeklyWorkoutsTarget=c;} }
+    static class GoalService { void setDailyBurn(User u, Integer k){u.goal.dailyBurnTarget=k;} }
 
     // ======== APP ========
     static class FitnessFrame extends JFrame {
@@ -197,7 +196,7 @@ public class Main {
         JTextField nameField = new JTextField(16);
         JButton loginBtn = new RoundedButton("Sign In / Create");
 
-        // Nutrition
+        // Nutrition (tab 1) + Daily Goal
         JComboBox<Food> foodPicker = new JComboBox<>(DEFAULT_FOODS.toArray(new Food[0]));
         JSpinner gramsSpinner = new JSpinner(new SpinnerNumberModel(100, 1, 2000, 10));
         JSpinner caloriesSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 5000, 10));
@@ -206,7 +205,11 @@ public class Main {
         DefaultTableModel todayNutritionModel = new DefaultTableModel(new Object[]{"Time", "Food", "Grams", "Calories"}, 0);
         JTable todayNutritionTable = new JTable(todayNutritionModel);
 
-        // Workout entry (no rows — direct questions)
+        // NEW: Daily Burn Goal controls (first page)
+        JSpinner burnGoalSpinner = new JSpinner(new SpinnerNumberModel(500, 0, 20000, 50));
+        JButton setBurnGoalBtn = new RoundedButton("Set Burn Goal");
+
+        // Workout entry (tab 2)
         JComboBox<String> workoutType = new JComboBox<>(new String[]{"Run", "Walk", "Cycle", "Swim", "Lift"});
         JComboBox<String> bodyPart = new JComboBox<>(new String[]{"-", "Chest", "Back", "Legs", "Shoulders", "Arms", "Core", "Full Body"});
 
@@ -215,13 +218,13 @@ public class Main {
         JSpinner workoutMins = new JSpinner(new SpinnerNumberModel(30, 1, 600, 1));
         JSpinner workoutKcal = new JSpinner(new SpinnerNumberModel(300, 0, 5000, 10));
 
-        // Strength panel (questions)
+        // Strength panel
         JPanel strengthPanel = new JPanel(new GridBagLayout());
         JTextField exNameField = new JTextField(18);
         JSpinner setsSpinner = new JSpinner(new SpinnerNumberModel(3, 1, 50, 1));
         JSpinner repsSpinner = new JSpinner(new SpinnerNumberModel(10, 1, 200, 1));
 
-        // Cardio panel (questions)
+        // Cardio panel
         JPanel cardioPanel = new JPanel(new GridBagLayout());
         JComboBox<String> distanceUnit = new JComboBox<>(new String[]{"Miles", "Steps"});
         JSpinner milesSpinner = new JSpinner(new SpinnerNumberModel(1.0, 0.0, 1000.0, 0.1));
@@ -230,25 +233,26 @@ public class Main {
         JButton saveWorkoutBtn = new RoundedButton("Log Workout");
         JLabel workoutSavedLbl = new JLabel(" ");
 
-        // Saved Workouts (by day)
+        // Saved Workouts (tab 3)
         DefaultListModel<LocalDate> daysListModel = new DefaultListModel<>();
         JList<LocalDate> daysList = new JList<>(daysListModel);
         DefaultTableModel savedWorkoutsModel = new DefaultTableModel(
-                new Object[]{"Start", "Type", "Body Part/Detail", "Minutes", "Kcal"}, 0);
+                new Object[]{"Time", "Type", "Body Part / Detail", "Minutes", "Calories"}, 0);
         JTable savedWorkoutsTable = new JTable(savedWorkoutsModel);
         JTextArea savedWorkoutDetail = new JTextArea(8, 40);
 
-        // Progress
-        JLabel todayCalLbl = new JLabel("Calories today: 0");
-        JLabel dailyTargetLbl = new JLabel("Daily target: -");
-        JLabel weekWorkoutsLbl = new JLabel("Workouts this week: 0");
-        JLabel weeklyTargetLbl = new JLabel("Weekly target: -");
+        // Progress (tab 4)
+        JLabel eatenTodayLbl = new JLabel("Eaten today: 0");
+        JLabel burnedTodayLbl = new JLabel("Burned today: 0");
+        JLabel burnGoalLbl = new JLabel("Burn goal: -");
         JButton refreshProgressBtn = new RoundedButton("Refresh");
         DefaultTableModel progressNutritionModel = new DefaultTableModel(new Object[]{"Time", "Food", "Grams", "Calories"}, 0);
         JTable progressNutritionTable = new JTable(progressNutritionModel);
         DefaultTableModel progressWorkoutsModel = new DefaultTableModel(
-                new Object[]{"Date", "Start", "Type", "Detail", "Minutes", "Kcal"}, 0);
+                new Object[]{"Date", "Start", "Type", "Detail", "Minutes", "Calories"}, 0);
         JTable progressWorkoutsTable = new JTable(progressWorkoutsModel);
+
+        private JTabbedPane tabs;
 
         FitnessFrame(InMemoryStore store) {
             super("Fitness App (Swing)");
@@ -289,9 +293,13 @@ public class Main {
             hw.setBackground(Theme.RED); hw.setForeground(Color.WHITE); hw.setFont(hw.getFont().deriveFont(Font.BOLD));
             progressWorkoutsTable.setRowHeight(22);
 
-            JTableHeader hsw = savedWorkoutsTable.getTableHeader();
-            hsw.setBackground(Theme.RED); hsw.setForeground(Color.WHITE); hsw.setFont(hsw.getFont().deriveFont(Font.BOLD));
+            // Saved Workouts table: widths (header is hidden)
             savedWorkoutsTable.setRowHeight(22);
+            savedWorkoutsTable.getColumnModel().getColumn(0).setPreferredWidth(70);
+            savedWorkoutsTable.getColumnModel().getColumn(1).setPreferredWidth(70);
+            savedWorkoutsTable.getColumnModel().getColumn(2).setPreferredWidth(240);
+            savedWorkoutsTable.getColumnModel().getColumn(3).setPreferredWidth(70);
+            savedWorkoutsTable.getColumnModel().getColumn(4).setPreferredWidth(80);
 
             daysList.setCellRenderer((list, value, index, isSelected, cellHasFocus) -> {
                 JLabel l = new JLabel(value.toString());
@@ -325,16 +333,16 @@ public class Main {
         }
 
         private JTabbedPane buildTabs() {
-            JTabbedPane tabs = new JTabbedPane();
+            tabs = new JTabbedPane();
+            tabs.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
             tabs.setBackground(Theme.CARD);
             tabs.setBorder(new EmptyBorder(6, 6, 6, 6));
 
-            tabs.addTab("Nutrition", buildNutritionTab());        // 1) Nutrition page
-            tabs.addTab("Workouts", buildWorkoutTab());           // 2) Workout entry page (questions)
-            tabs.addTab("Saved Workouts", buildSavedWorkoutsTab());// 3) Saved workouts (by day)
-            tabs.addTab("Progress", buildProgressTab());          // 4) Progress (nutrition first)
+            tabs.addTab("Nutrition", buildNutritionTab());
+            tabs.addTab("Workouts", buildWorkoutTab());
+            tabs.addTab("Saved Workouts", buildSavedWorkoutsTab());
+            tabs.addTab("Progress", buildProgressTab());
 
-            for (int i = 0; i < tabs.getTabCount(); i++) tabs.setForegroundAt(i, Theme.RED_DARK);
             return tabs;
         }
 
@@ -343,6 +351,23 @@ public class Main {
             p.setBackground(Theme.CARD);
             p.setBorder(new EmptyBorder(12,12,12,12));
 
+            // --- Daily Goal panel (first page) ---
+            JPanel goalPanel = new JPanel(new GridBagLayout());
+            goalPanel.setOpaque(true);
+            goalPanel.setBackground(Theme.CARD);
+            TitledBorder gb = new TitledBorder("Daily Goal");
+            gb.setTitleColor(Theme.TEXT);
+            goalPanel.setBorder(gb);
+
+            GridBagConstraints g = new GridBagConstraints();
+            g.insets = new Insets(6,6,6,6);
+            g.fill = GridBagConstraints.HORIZONTAL;
+            int gy = 0;
+            g.gridx = 0; g.gridy = gy; goalPanel.add(new JLabel("Calories to burn today (kcal):"), g);
+            g.gridx = 1; g.gridy = gy++; goalPanel.add(burnGoalSpinner, g);
+            g.gridx = 0; g.gridy = gy; g.gridwidth = 2; goalPanel.add(setBurnGoalBtn, g);
+
+            // --- Food form ---
             JPanel form = new JPanel(new GridBagLayout());
             form.setOpaque(false);
             GridBagConstraints c = new GridBagConstraints();
@@ -362,13 +387,18 @@ public class Main {
             c.gridx=0; c.gridy=y; c.gridwidth=2; form.add(addFoodBtn, c);
             c.gridy=y+1; form.add(colorizeInfo(foodSavedLbl), c);
 
-            p.add(form, BorderLayout.NORTH);
+            p.add(goalPanel, BorderLayout.NORTH);
 
             JPanel center = new JPanel(new BorderLayout());
             center.setOpaque(false);
             center.setBorder(new TitledBorder("Today's Nutrition"));
             center.add(new JScrollPane(todayNutritionTable), BorderLayout.CENTER);
             p.add(center, BorderLayout.CENTER);
+
+            JPanel below = new JPanel(new BorderLayout());
+            below.setOpaque(false);
+            below.add(form, BorderLayout.NORTH);
+            p.add(below, BorderLayout.SOUTH);
 
             return p;
         }
@@ -451,23 +481,57 @@ public class Main {
             p.setBorder(new EmptyBorder(12,12,12,12));
 
             JPanel left = new JPanel(new BorderLayout());
-            left.setOpaque(false);
-            left.setBorder(new TitledBorder("Days"));
-            left.add(new JScrollPane(daysList), BorderLayout.CENTER);
+            left.setOpaque(true);
+            left.setBackground(Theme.CARD);
+            TitledBorder leftBorder = new TitledBorder("Days");
+            leftBorder.setTitleColor(Theme.TEXT);
+            left.setBorder(leftBorder);
+            JScrollPane daysScroll = new JScrollPane(daysList);
+            daysScroll.getViewport().setBackground(Color.WHITE);
+            left.add(daysScroll, BorderLayout.CENTER);
 
             JPanel right = new JPanel();
-            right.setOpaque(false);
+            right.setOpaque(true);
+            right.setBackground(Theme.CARD);
             right.setLayout(new BoxLayout(right, BoxLayout.Y_AXIS));
 
             JPanel tablePanel = new JPanel(new BorderLayout());
-            tablePanel.setOpaque(false);
-            tablePanel.setBorder(new TitledBorder("Workouts"));
-            tablePanel.add(new JScrollPane(savedWorkoutsTable), BorderLayout.CENTER);
+            tablePanel.setOpaque(true);
+            tablePanel.setBackground(Theme.CARD);
+            TitledBorder tableBorder = new TitledBorder("Workouts");
+            tableBorder.setTitleColor(Theme.TEXT);
+            tablePanel.setBorder(tableBorder);
+
+            // ---- ALWAYS-VISIBLE LEGEND ----
+            JPanel legend = new JPanel(new GridLayout(1,5));
+            legend.setBorder(new EmptyBorder(4,8,4,8));
+            legend.setBackground(new Color(245,245,245));
+            legend.add(makeLegendLabel("Time"));
+            legend.add(makeLegendLabel("Type"));
+            legend.add(makeLegendLabel("Body Part / Detail"));
+            legend.add(makeLegendLabel("Minutes"));
+            legend.add(makeLegendLabel("Calories"));
+            tablePanel.add(legend, BorderLayout.NORTH);
+
+            JScrollPane tableScroll = new JScrollPane(savedWorkoutsTable);
+            tableScroll.getViewport().setBackground(Color.WHITE);
+
+            // ---- HIDE TABLE HEADER (keep legend only) ----
+            savedWorkoutsTable.setTableHeader(null);
+            tableScroll.setColumnHeaderView(null);
+
+            tablePanel.add(tableScroll, BorderLayout.CENTER);
 
             JPanel detailPanel = new JPanel(new BorderLayout());
-            detailPanel.setOpaque(false);
-            detailPanel.setBorder(new TitledBorder("Selected Workout Details"));
-            detailPanel.add(new JScrollPane(savedWorkoutDetail), BorderLayout.CENTER);
+            detailPanel.setOpaque(true);
+            detailPanel.setBackground(Theme.CARD);
+            TitledBorder detailBorder = new TitledBorder("Selected Workout Details");
+            detailBorder.setTitleColor(Theme.TEXT);
+            detailPanel.setBorder(detailBorder);
+
+            JScrollPane detailScroll = new JScrollPane(savedWorkoutDetail);
+            detailScroll.getViewport().setBackground(Color.WHITE);
+            detailPanel.add(detailScroll, BorderLayout.CENTER);
 
             right.add(tablePanel);
             right.add(Box.createVerticalStrut(8));
@@ -486,6 +550,13 @@ public class Main {
             return p;
         }
 
+        private JLabel makeLegendLabel(String text){
+            JLabel l = new JLabel(text);
+            l.setFont(l.getFont().deriveFont(Font.BOLD));
+            l.setForeground(Theme.TEXT);
+            return l;
+        }
+
         private JPanel buildProgressTab() {
             JPanel p = new JPanel(new BorderLayout());
             p.setBackground(Theme.CARD);
@@ -497,17 +568,15 @@ public class Main {
             c.insets = new Insets(6,6,6,6);
             c.fill = GridBagConstraints.HORIZONTAL;
 
-            todayCalLbl.setForeground(Theme.TEXT);
-            dailyTargetLbl.setForeground(Theme.SUBTLE);
-            weekWorkoutsLbl.setForeground(Theme.TEXT);
-            weeklyTargetLbl.setForeground(Theme.SUBTLE);
+            eatenTodayLbl.setForeground(Theme.TEXT);
+            burnedTodayLbl.setForeground(Theme.TEXT);
+            burnGoalLbl.setForeground(Theme.SUBTLE);
 
             int y=0;
-            c.gridx=0; c.gridy=y; top.add(todayCalLbl, c);
-            c.gridx=1; c.gridy=y++; top.add(dailyTargetLbl, c);
-            c.gridx=0; c.gridy=y; top.add(weekWorkoutsLbl, c);
-            c.gridx=1; c.gridy=y++; top.add(weeklyTargetLbl, c);
-            c.gridx=0; c.gridy=y; c.gridwidth=2; top.add(refreshProgressBtn, c);
+            c.gridx=0; c.gridy=y; top.add(eatenTodayLbl, c);
+            c.gridx=1; c.gridy=y++; top.add(burnedTodayLbl, c);
+            c.gridx=0; c.gridy=y; c.gridwidth=2; top.add(burnGoalLbl, c);
+            c.gridx=0; c.gridy=y+1; c.gridwidth=2; top.add(refreshProgressBtn, c);
 
             p.add(top, BorderLayout.NORTH);
 
@@ -516,14 +585,24 @@ public class Main {
             center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
 
             JPanel nutPanel = new JPanel(new BorderLayout());
-            nutPanel.setOpaque(false);
-            nutPanel.setBorder(new TitledBorder("Today's Nutrition"));
-            nutPanel.add(new JScrollPane(progressNutritionTable), BorderLayout.CENTER);
+            nutPanel.setOpaque(true);
+            nutPanel.setBackground(Theme.CARD);
+            TitledBorder nutBorder = new TitledBorder("Today's Nutrition");
+            nutBorder.setTitleColor(Theme.TEXT);
+            nutPanel.setBorder(nutBorder);
+            JScrollPane progNutScroll = new JScrollPane(progressNutritionTable);
+            progNutScroll.getViewport().setBackground(Color.WHITE);
+            nutPanel.add(progNutScroll, BorderLayout.CENTER);
 
             JPanel wkPanel = new JPanel(new BorderLayout());
-            wkPanel.setOpaque(false);
-            wkPanel.setBorder(new TitledBorder("Today's Workouts"));
-            wkPanel.add(new JScrollPane(progressWorkoutsTable), BorderLayout.CENTER);
+            wkPanel.setOpaque(true);
+            wkPanel.setBackground(Theme.CARD);
+            TitledBorder wkBorder = new TitledBorder("Today's Workouts");
+            wkBorder.setTitleColor(Theme.TEXT);
+            wkPanel.setBorder(wkBorder);
+            JScrollPane progWkScroll = new JScrollPane(progressWorkoutsTable);
+            progWkScroll.getViewport().setBackground(Color.WHITE);
+            wkPanel.add(progWkScroll, BorderLayout.CENTER);
 
             center.add(nutPanel);
             center.add(Box.createVerticalStrut(10));
@@ -548,6 +627,14 @@ public class Main {
                 welcomeLbl.setText("Welcome, " + currentUser.name + "!");
                 refreshAllProgress();
                 refreshDaysList();
+            });
+
+            setBurnGoalBtn.addActionListener(e -> {
+                if (!ensureUser()) return;
+                int goal = (Integer) burnGoalSpinner.getValue();
+                goalSvc.setDailyBurn(currentUser, goal);
+                JOptionPane.showMessageDialog(this, "Daily burn goal set to " + goal + " kcal.", "Goal Updated", JOptionPane.INFORMATION_MESSAGE);
+                refreshAllProgress();
             });
 
             gramsSpinner.addChangeListener(e -> updateCaloriesFromFood());
@@ -598,7 +685,6 @@ public class Main {
 
                 workoutSvc.logWorkout(currentUser, w);
                 workoutSavedLbl.setText("Workout saved.");
-                // clear minimal strength fields
                 exNameField.setText("");
                 refreshAllProgress();
                 refreshDaysList();
@@ -638,26 +724,23 @@ public class Main {
         private void refreshAllProgress() {
             if (currentUser == null) return;
 
-            int calToday = nutritionSvc.dailyCalories(currentUser, LocalDate.now());
-            todayCalLbl.setText("Calories today: " + calToday);
+            int eatenToday = nutritionSvc.dailyCalories(currentUser, LocalDate.now());
+            eatenTodayLbl.setText("Eaten today: " + eatenToday + " kcal");
 
-            if (currentUser.goal.dailyCaloriesTarget != null) {
-                int remain = currentUser.goal.dailyCaloriesTarget - calToday;
-                dailyTargetLbl.setText("Daily target: " + currentUser.goal.dailyCaloriesTarget + " (Remaining: " + remain + ")");
+            int burnedToday = workoutSvc.listWorkouts(currentUser).stream()
+                    .filter(w -> w.startedAt.toLocalDate().equals(LocalDate.now()))
+                    .mapToInt(w -> w.estimatedCalories)
+                    .sum();
+            burnedTodayLbl.setText("Burned today: " + burnedToday + " kcal");
+
+            if (currentUser.goal.dailyBurnTarget != null) {
+                int remain = Math.max(currentUser.goal.dailyBurnTarget - burnedToday, 0);
+                burnGoalLbl.setText("Burn goal: " + currentUser.goal.dailyBurnTarget + " kcal (Remaining: " + remain + ")");
             } else {
-                dailyTargetLbl.setText("Daily target: -");
+                burnGoalLbl.setText("Burn goal: -");
             }
 
-            long wkCount = workoutSvc.countWorkoutsInWeek(currentUser, startOfThisWeek());
-            weekWorkoutsLbl.setText("Workouts this week: " + wkCount);
-            if (currentUser.goal.weeklyWorkoutsTarget != null) {
-                long left = Math.max(currentUser.goal.weeklyWorkoutsTarget - wkCount, 0);
-                weeklyTargetLbl.setText("Weekly target: " + currentUser.goal.weeklyWorkoutsTarget + " (Left: " + left + ")");
-            } else {
-                weeklyTargetLbl.setText("Weekly target: -");
-            }
-
-            // progress nutrition
+            // progress nutrition table
             progressNutritionModel.setRowCount(0);
             for (NutritionEntry n : nutritionSvc.listToday(currentUser)) {
                 progressNutritionModel.addRow(new Object[]{
@@ -665,7 +748,7 @@ public class Main {
                 });
             }
 
-            // today's workouts
+            // today's workouts table
             progressWorkoutsModel.setRowCount(0);
             for (Workout w : workoutSvc.listWorkouts(currentUser).stream()
                     .filter(w -> w.startedAt.toLocalDate().equals(LocalDate.now())).toList()) {
@@ -764,12 +847,12 @@ public class Main {
                 JOptionPane.showMessageDialog(this, "Please sign in first.", "Not Signed In", JOptionPane.WARNING_MESSAGE);
                 return false;
             }
-            return true;olij
+            return true;
         }
     }
 
     // ======== UTIL ========
-    private static LocalDate startOfThisWeek() {
+    private static LocalDate startOfThisWeek() { // unused now
         LocalDate today = LocalDate.now();
         return today.minusDays((today.getDayOfWeek().getValue() + 6) % 7);
     }
