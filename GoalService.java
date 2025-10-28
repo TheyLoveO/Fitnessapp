@@ -1,0 +1,1 @@
+public class GoalService { void setDailyBurn(User u, Integer k){u.goal.dailyBurnTarget=k;} }
