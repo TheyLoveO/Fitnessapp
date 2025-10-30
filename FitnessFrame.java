@@ -119,7 +119,7 @@ public class FitnessFrame extends JFrame {
         progressNutritionTable.setRowHeight(22);
 
         JTableHeader hw = progressWorkoutsTable.getTableHeader();
-        hw.setBackground(Theme.RED); hw.setForeground(Color.WHITE); hw.setFont(hw.getFont().deriveFont(Font.BOLD));
+        hw.setBackground(Theme.RED); hw.setForeground(Theme.TEXT); hw.setFont(hw.getFont().deriveFont(Font.BOLD));
         progressWorkoutsTable.setRowHeight(22);
 
         // Saved Workouts table: widths (header is hidden)
@@ -678,4 +678,5 @@ public class FitnessFrame extends JFrame {
         }
         return true;
     }
+
 }
