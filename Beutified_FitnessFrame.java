@@ -1,4 +1,4 @@
-import java.util.Comparator;
+mport java.util.Comparator;
 import java.util.List;
 import java.awt.*;
 import java.awt.event.*;
@@ -11,6 +11,17 @@ import javax.swing.border.*;
 import javax.swing.table.*;
 
 public class FitnessFrame extends JFrame {
+    static {
+        try {
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (Exception ignore) {}
+    }
+
     final InMemoryStore store;
     final AuthService auth;
     final WorkoutService workoutSvc;
@@ -141,7 +152,9 @@ public class FitnessFrame extends JFrame {
         savedWorkoutDetail.setEditable(false);
         savedWorkoutDetail.setLineWrap(true);
         savedWorkoutDetail.setWrapStyleWord(true);
-    }
+    
+        installEnhancedLook();
+}
 
     private JPanel buildHeader() {
         JPanel p = new JPanel(new BorderLayout());
@@ -677,6 +690,118 @@ public class FitnessFrame extends JFrame {
             return false;
         }
         return true;
+    }
+
+
+    /** Apply extra modern visuals without changing behavior. */
+    private void installEnhancedLook() {
+        // Soften overall background
+        getContentPane().setBackground(new Color(248,250,252));
+
+        // Buttons: unify font, padding, rounded border, hover cursor
+        for (Component c : getContentPane().getComponents()) {
+            applyRecursive(c);
+        }
+
+        // Zebra striping for tables
+        installZebra(todayNutritionTable);
+        installZebra(progressNutritionTable);
+        installZebra(savedWorkoutsTable);
+
+        // Slightly larger tab font if present
+        for (Window w : Window.getWindows()) {
+            for (Component c : w.getComponents()) {
+                if (c instanceof JTabbedPane tabs) {
+                    tabs.setFont(tabs.getFont().deriveFont(Font.BOLD, tabs.getFont().getSize2D() + 1f));
+                    tabs.setBorder(new EmptyBorder(6,6,0,6));
+                }
+            }
+        }
+    }
+
+    private void applyRecursive(Component c) {
+        if (c instanceof AbstractButton b) {
+            b.setFont(b.getFont().deriveFont(Font.BOLD));
+            b.setFocusPainted(false);
+            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            if (!(b.getBorder() instanceof RoundedBorder)) {
+                b.setBorder(new RoundedBorder(14));
+            }
+            if (b.getBackground() == null || b.getBackground() instanceof javax.swing.plaf.UIResource) {
+                b.setBackground(new Color(59,130,246)); // blue-500
+                b.setForeground(Color.WHITE);
+            }
+            b.setOpaque(true);
+            b.setRolloverEnabled(true);
+            b.addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override public void mouseEntered(java.awt.event.MouseEvent e) {
+                    b.setBackground(new Color(37,99,235)); // darker on hover
+                }
+                @Override public void mouseExited(java.awt.event.MouseEvent e) {
+                    b.setBackground(new Color(59,130,246));
+                }
+            });
+        } else if (c instanceof JPanel p) {
+            if (!p.isOpaque()) p.setOpaque(true);
+            if (p.getBackground() == null || p.getBackground() instanceof javax.swing.plaf.UIResource) {
+                p.setBackground(new Color(255,255,255));
+            }
+            if (p.getBorder() == null) {
+                p.setBorder(new EmptyBorder(6,6,6,6));
+            }
+            for (Component child : p.getComponents()) applyRecursive(child);
+        } else if (c instanceof JScrollPane sp) {
+            sp.setBorder(new LineBorder(new Color(229,231,235)));
+            if (sp.getViewport() != null && sp.getViewport().getView() != null) {
+                applyRecursive(sp.getViewport().getView());
+            }
+        } else if (c instanceof JComponent jc) {
+            if (jc.getBorder() == null) {
+                jc.setBorder(new EmptyBorder(4,6,4,6));
+            }
+        }
+    }
+
+    private void installZebra(JTable table) {
+        if (table == null) return;
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.setRowHeight(Math.max(24, table.getRowHeight()));
+        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component comp = super.getTableCellRendererComponent(t, value, isSelected, hasFocus, row, column);
+                if (!isSelected) {
+                    comp.setBackground((row % 2 == 0) ? new Color(249,250,251) : Color.WHITE);
+                }
+                if (comp instanceof JComponent jc) {
+                    jc.setBorder(new EmptyBorder(6,8,6,8));
+                }
+                return comp;
+            }
+        });
+        JTableHeader header = table.getTableHeader();
+        if (header != null) {
+            header.setOpaque(true);
+            header.setBackground(new Color(230, 243, 255));
+            header.setForeground(new Color(17, 24, 39));
+            header.setFont(header.getFont().deriveFont(Font.BOLD));
+        }
+    }
+
+    /** Simple rounded border that keeps button shapes smooth. */
+    static class RoundedBorder implements Border {
+        private final int radius;
+        RoundedBorder(int radius) { this.radius = radius; }
+        @Override public Insets getBorderInsets(Component c) { return new Insets(radius/2, radius, radius/2, radius); }
+        @Override public boolean isBorderOpaque() { return false; }
+        @Override public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(new Color(229,231,235));
+            g2.drawRoundRect(x, y, width-1, height-1, radius, radius);
+            g2.dispose();
+        }
     }
 
 }
