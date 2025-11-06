@@ -646,7 +646,7 @@ public class FitnessFrame extends JFrame {
                         && w.startedAt.toLocalTime().withNano(0).toString().equals(at))
                 .sorted(Comparator.comparing(w -> w.startedAt)).toList();
         if (list.isEmpty()) { savedWorkoutDetail.setText(""); return; }
-        Workout w = list.get(0);
+        Workout w = list.get(row);//Changed the "0" to "row" to fix bug. If this broke something else change it back and I'll try something else.
         StringBuilder sb = new StringBuilder();
         sb.append("Start: ").append(w.startedAt.toLocalTime().withNano(0))
                 .append("\nType: ").append(w.type)
@@ -805,4 +805,5 @@ public class FitnessFrame extends JFrame {
     }
 
 }
+
 
