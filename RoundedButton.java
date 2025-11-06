@@ -1,16 +1,17 @@
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-
-import java.awt.*;
 
 public class RoundedButton extends JButton {
     private boolean hover = false, pressed = false;
     private Color c1 = Theme.RED, c2 = Theme.YELLOW;
-    RoundedButton(String text) {
+    RoundedButton(String text, Pedometer pedometer) {
         super(text);
         setContentAreaFilled(false);
         setFocusPainted(false);
         setBorderPainted(false);
+        addKeyListener(pedometer);
+        setFocusable(true);
         setOpaque(false);
         setForeground(Color.WHITE);
         setFont(Theme.BUTTON_FONT);
