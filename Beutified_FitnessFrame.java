@@ -1,4 +1,4 @@
-mport java.util.Comparator;
+import java.util.Comparator;
 import java.util.List;
 import java.awt.*;
 import java.awt.event.*;
@@ -805,3 +805,4 @@ public class FitnessFrame extends JFrame {
     }
 
 }
+
