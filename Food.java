@@ -1,11 +1,34 @@
 import java.util.List;
 
+/**
+ * Represents a given food.
+ */
 public class Food {
     final String name;
     final int kcalPer100g;
-    Food(String name, int kcalPer100g) { this.name = name; this.kcalPer100g = kcalPer100g; }
-    @Override public String toString() { return name + " (" + kcalPer100g + " kcal/100g)"; }
 
+    /**
+     * Creates an instance of the Food class.
+     * @param name the name of the fod
+     * @param kcalPer100g how many kilocalories per 100 grams
+     * @return the new instance of Food
+     */
+    Food(String name, int kcalPer100g) { 
+        this.name = name; 
+        this.kcalPer100g = kcalPer100g; 
+    }
+    /**
+     * Converts the Food object to a descriptive string.
+     * @return the string derived from the object
+     */
+    @Override public String toString() { 
+        return name + " (" + kcalPer100g + " kcal/100g)";
+    }
+
+    /**
+     * Gives a list of the default foods that can be chosen from within the application.
+     * @return the complete list of foods
+     */
     public static List<Food> getDefaultFoods() {
         return List.of(
             new Food("Chicken Breast (cooked)", 165),

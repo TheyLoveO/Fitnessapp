@@ -1,20 +1,23 @@
-import java.util.Comparator;
-import java.util.List;
 import java.awt.*;
 import java.awt.event.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-
+import java.util.Comparator;
+import java.util.List;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
 
+/**
+ * This class is responsible for the user interface of the application. It also contains most of the logic related to user actions.
+ */
 public class FitnessFrame extends JFrame {
     static {
         try {
             for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
+                    //setting the look and feel to Nimbus: @https://docs.oracle.com/javase/tutorial/uiswing/lookandfeel/nimbus.html
                     UIManager.setLookAndFeel(info.getClassName());
                     break;
                 }
@@ -45,7 +48,7 @@ public class FitnessFrame extends JFrame {
     DefaultTableModel todayNutritionModel = new DefaultTableModel(new Object[]{"Time", "Food", "Grams", "Calories"}, 0);
     JTable todayNutritionTable = new JTable(todayNutritionModel);
 
-    // NEW: Daily Burn Goal controls (first page)
+    // Daily Burn Goal controls (first page)
     JSpinner burnGoalSpinner = new JSpinner(new SpinnerNumberModel(500, 0, 20000, 50));
     JButton setBurnGoalBtn = new RoundedButton("Set Burn Goal");
 
@@ -94,6 +97,10 @@ public class FitnessFrame extends JFrame {
 
     private JTabbedPane tabs;
 
+    /**
+     * Creates an instance of FitnessFrame, calling all relevant functions for UI and actions
+     * @param store the memory storage object
+     */
     FitnessFrame(InMemoryStore store) {
         super("Fitness App (Swing)");
         this.store = store;
@@ -114,12 +121,15 @@ public class FitnessFrame extends JFrame {
         styleGlobals();
 
         updateCaloriesFromFood();
-        toggleWorkoutPanels(); // initialize correct panel
+        toggleWorkoutPanels();
     }
 
+    /**
+     * A GUI function - this prepares many visual aspects of the app
+     */
     private void styleGlobals() {
         welcomeLbl.setFont(welcomeLbl.getFont().deriveFont(Font.BOLD, 14f));
-        welcomeLbl.setForeground(Theme.RED_DARK);
+        welcomeLbl.setForeground(Theme.TEXT);
 
         JTableHeader hn = todayNutritionTable.getTableHeader();
         hn.setBackground(Theme.YELLOW); hn.setForeground(Theme.TEXT); hn.setFont(hn.getFont().deriveFont(Font.BOLD));
@@ -153,31 +163,58 @@ public class FitnessFrame extends JFrame {
         savedWorkoutDetail.setLineWrap(true);
         savedWorkoutDetail.setWrapStyleWord(true);
     
-        installEnhancedLook();
-}
+        //installEnhancedLook();
+    }
 
+    /**
+     * Instantiates the JPanel object that covers the top of the GUI - the header for inputting login information.
+     */
     private JPanel buildHeader() {
         JPanel p = new JPanel(new BorderLayout());
         p.setBorder(new EmptyBorder(10, 10, 10, 10));
         p.setBackground(Theme.CARD);
 
-        JPanel loginPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        loginPanel.setOpaque(false);
-        loginPanel.add(new JLabel("Email:"));
+        JPanel loginPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        loginPanel.setOpaque(true);
+        loginPanel.setBackground(Theme.CARD);
+
+        JLabel emailLbl = new JLabel("Email:");
+        emailLbl.setForeground(Theme.TEXT);
+        emailLbl.setOpaque(false);
+        JLabel nameLbl = new JLabel("Name:");
+        nameLbl.setForeground(Theme.TEXT);
+        nameLbl.setOpaque(false);
+
+        emailField.setOpaque(true);
+        emailField.setBackground(Theme.CARD);
+        emailField.setForeground(Theme.TEXT);
+        emailField.setCaretColor(Theme.TEXT);
+        emailField.setBorder(new javax.swing.border.LineBorder(new Color(90,95,105)));
+
+        nameField.setOpaque(true);
+        nameField.setBackground(Theme.CARD);
+        nameField.setForeground(Theme.TEXT);
+        nameField.setCaretColor(Theme.TEXT);
+        nameField.setBorder(new javax.swing.border.LineBorder(new Color(90,95,105)));
+
+        loginPanel.add(emailLbl);
         loginPanel.add(emailField);
-        loginPanel.add(new JLabel("Name:"));
+        loginPanel.add(nameLbl);
         loginPanel.add(nameField);
         loginPanel.add(loginBtn);
 
-        p.add(loginPanel, BorderLayout.WEST);
-        p.add(welcomeLbl, BorderLayout.EAST);
+        p.add(welcomeLbl, BorderLayout.WEST);
+        p.add(loginPanel, BorderLayout.EAST);
         return p;
     }
 
+    /**
+     * Instantiates the JTabbedPane object that contains each tab in the application.
+     */
     private JTabbedPane buildTabs() {
         tabs = new JTabbedPane();
         tabs.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-        tabs.setBackground(Theme.CARD);
+        tabs.setBackground(Color.WHITE);
         tabs.setBorder(new EmptyBorder(6, 6, 6, 6));
 
         tabs.addTab("Nutrition", buildNutritionTab());
@@ -188,6 +225,9 @@ public class FitnessFrame extends JFrame {
         return tabs;
     }
 
+    /**
+     * Creates the nutrition tab's JPanel object.
+     */
     private JPanel buildNutritionTab() {
         JPanel p = new JPanel(new BorderLayout());
         p.setBackground(Theme.CARD);
@@ -245,6 +285,9 @@ public class FitnessFrame extends JFrame {
         return p;
     }
 
+    /**
+     * Creates the workout tab's JPanel object.
+     */
     private JPanel buildWorkoutTab() {
         JPanel p = new JPanel(new BorderLayout());
         p.setBackground(Theme.CARD);
@@ -306,7 +349,6 @@ public class FitnessFrame extends JFrame {
         distPanel.add(stepsSpinner);
         k.gridx=1; k.gridy=ky++; cardioPanel.add(distPanel, k);
 
-        // Add them (we'll toggle visibility)
         c.gridx=0; c.gridy=y; c.gridwidth=2; form.add(strengthPanel, c);
         c.gridy=y+1; form.add(cardioPanel, c);
 
@@ -317,6 +359,9 @@ public class FitnessFrame extends JFrame {
         return p;
     }
 
+    /**
+     * Creates the saved workout tab's JPanel object.
+     */
     private JPanel buildSavedWorkoutsTab() {
         JPanel p = new JPanel(new BorderLayout());
         p.setBackground(Theme.CARD);
@@ -392,6 +437,9 @@ public class FitnessFrame extends JFrame {
         return p;
     }
 
+    /**
+     * Creates a legend label - this is used primarily in the saved workouts tab
+     */
     private JLabel makeLegendLabel(String text){
         JLabel l = new JLabel(text);
         l.setFont(l.getFont().deriveFont(Font.BOLD));
@@ -399,6 +447,9 @@ public class FitnessFrame extends JFrame {
         return l;
     }
 
+    /**
+     * Creates the progress tab's JPanel object.
+     */
     private JPanel buildProgressTab() {
         JPanel p = new JPanel(new BorderLayout());
         p.setBackground(Theme.CARD);
@@ -454,10 +505,21 @@ public class FitnessFrame extends JFrame {
         return p;
     }
 
-    private JLabel colorizeInfo(JLabel lbl) { lbl.setForeground(Theme.RED_DARK); return lbl; }
+    /**
+     * Sets the foreground color to red dark for a given JLabel.
+     * @param lbl the JLabel object
+     */
+    private JLabel colorizeInfo(JLabel lbl) { 
+        lbl.setForeground(Theme.RED_DARK); 
+        return lbl; 
+    }
 
-    // ======== WIRES ========
+    /**
+     * This function creates various action listeners for the objects in the FitnessFrame class. Some of the basic logic for how to update
+     * the application when these actions are called is also included within the function.
+     */
     private void wireActions() {
+        //when the user inputs login information
         loginBtn.addActionListener(e -> {
             String email = emailField.getText().trim();
             String name = nameField.getText().trim();
@@ -471,6 +533,7 @@ public class FitnessFrame extends JFrame {
             refreshDaysList();
         });
 
+        //when the user inputs burn goal information
         setBurnGoalBtn.addActionListener(e -> {
             if (!ensureUser()) return;
             int goal = (Integer) burnGoalSpinner.getValue();
@@ -482,6 +545,7 @@ public class FitnessFrame extends JFrame {
         gramsSpinner.addChangeListener(e -> updateCaloriesFromFood());
         foodPicker.addItemListener(e -> { if (e.getStateChange() == ItemEvent.SELECTED) updateCaloriesFromFood(); });
 
+        //when the user inputs consumed food information
         addFoodBtn.addActionListener(e -> {
             if (!ensureUser()) return;
             Food f = (Food) foodPicker.getSelectedItem();
@@ -497,6 +561,7 @@ public class FitnessFrame extends JFrame {
         workoutType.addItemListener(e -> { if (e.getStateChange() == ItemEvent.SELECTED) toggleWorkoutPanels(); });
         distanceUnit.addItemListener(e -> toggleDistanceEditors());
 
+        //when the user saves a workout
         saveWorkoutBtn.addActionListener(e -> {
             if (!ensureUser()) return;
 
@@ -533,12 +598,16 @@ public class FitnessFrame extends JFrame {
             selectDay(LocalDate.now());
         });
 
+        //when the user presses the refresh progress button
         refreshProgressBtn.addActionListener(e -> {
             refreshAllProgress();
             refreshDaysList();
         });
     }
 
+    /**
+     * Basic GUI setters for visibilty.
+     */
     private void toggleWorkoutPanels() {
         String type = String.valueOf(workoutType.getSelectedItem());
         boolean cardio = isCardio(type);
@@ -550,6 +619,9 @@ public class FitnessFrame extends JFrame {
         cardioPanel.revalidate(); cardioPanel.repaint();
     }
 
+    /**
+     * Basic GUI setters for visibilty.
+     */
     private void toggleDistanceEditors() {
         String unit = String.valueOf(distanceUnit.getSelectedItem());
         boolean miles = unit.equals("Miles");
@@ -558,11 +630,18 @@ public class FitnessFrame extends JFrame {
         cardioPanel.revalidate(); cardioPanel.repaint();
     }
 
+    /**
+     * Returns a boolean value corresponding to if a workout is cardio.
+     * @param type the name of the workout
+     * @return a boolean value - true if the workout is cardio, false otherwise
+     */
     private boolean isCardio(String type) {
         return type.equals("Run") || type.equals("Walk") || type.equals("Cycle") || type.equals("Swim");
     }
 
-    // ======== REFRESH ========
+    /**
+     * Updates several GUI components related to the user's progress to reflect the current state, should be called after an action updates values in memory
+     */
     private void refreshAllProgress() {
         if (currentUser == null) return;
 
@@ -604,6 +683,10 @@ public class FitnessFrame extends JFrame {
         }
     }
 
+
+    /**
+     * Updates the GUI day list to reflect the current state of the program.
+     */
     private void refreshDaysList() {
         if (currentUser == null) return;
         daysListModel.clear();
@@ -614,10 +697,23 @@ public class FitnessFrame extends JFrame {
         if (!dates.isEmpty() && daysList.getSelectedValue() == null) daysList.setSelectedIndex(0);
     }
 
+    /**
+     * Sets the daysList object to select a day with the given date
+     * @param date a LocalDate object representing a point in time
+     */
     private void selectDay(LocalDate date) {
-        for (int i = 0; i < daysListModel.size(); i++) if (daysListModel.get(i).equals(date)) { daysList.setSelectedIndex(i); return; }
+        for (int i = 0; i < daysListModel.size(); i++)  { 
+            if (daysListModel.get(i).equals(date)) { 
+                daysList.setSelectedIndex(i); 
+                return; 
+            }
+        }
     }
 
+    /**
+     * Updates the savedWorkoutsModel GUI object to be populated with only workouts from a given day.
+     * @param d the day to populate the saved workouts object with
+     */
     private void populateSavedWorkoutsForDay(LocalDate d) {
         savedWorkoutsModel.setRowCount(0);
         savedWorkoutDetail.setText("");
@@ -636,6 +732,10 @@ public class FitnessFrame extends JFrame {
         }
     }
 
+    /**
+     * A GUI function for displaying information relevant to a workout. This modifies the savedWorkoutDetail JTextArea object.
+     * @param row a value corresponding to an index in the WorkoutService object. This is how the function gets access to the workout to display information for.
+     */
     private void showSavedWorkoutDetailForRow(int row) {
         if (currentUser == null) return;
         LocalDate day = daysList.getSelectedValue();
@@ -664,6 +764,11 @@ public class FitnessFrame extends JFrame {
         savedWorkoutDetail.setCaretPosition(0);
     }
 
+    /**
+     * Concatenates a string containing details relevant to a workout object.
+     * @param w the given workout object
+     * @return A string describing the details of the workout object
+     */
     private String summarizeDetail(Workout w) {
         if (isCardio(w.type)) {
             return w.distanceUnit.equals("Miles")
@@ -674,7 +779,9 @@ public class FitnessFrame extends JFrame {
         return bp + " — " + (w.exerciseName == null ? "-" : w.exerciseName) + " (" + w.sets + "x" + w.reps + ")";
     }
 
-    // ======== HELPERS ========
+    /**
+     * Updates the calorie count from the selected food (using the foodPicker object).
+     */
     private void updateCaloriesFromFood() {
         Food f = (Food) foodPicker.getSelectedItem();
         int grams = (Integer) gramsSpinner.getValue();
@@ -684,6 +791,11 @@ public class FitnessFrame extends JFrame {
         }
     }
 
+    /**
+     * This function is called before several actions in the program to ensure that the user is logged in. It returns a boolean value indicating
+     * this, and also displays a message telling the user to sign in.
+     * @return a boolean value indicating if the user is logged in: true if they are, false if they are not.
+     */
     private boolean ensureUser() {
         if (currentUser == null) {
             JOptionPane.showMessageDialog(this, "Please sign in first.", "Not Signed In", JOptionPane.WARNING_MESSAGE);
@@ -691,119 +803,6 @@ public class FitnessFrame extends JFrame {
         }
         return true;
     }
-
-
-    /** Apply extra modern visuals without changing behavior. */
-    private void installEnhancedLook() {
-        // Soften overall background
-        getContentPane().setBackground(new Color(248,250,252));
-
-        // Buttons: unify font, padding, rounded border, hover cursor
-        for (Component c : getContentPane().getComponents()) {
-            applyRecursive(c);
-        }
-
-        // Zebra striping for tables
-        installZebra(todayNutritionTable);
-        installZebra(progressNutritionTable);
-        installZebra(savedWorkoutsTable);
-
-        // Slightly larger tab font if present
-        for (Window w : Window.getWindows()) {
-            for (Component c : w.getComponents()) {
-                if (c instanceof JTabbedPane tabs) {
-                    tabs.setFont(tabs.getFont().deriveFont(Font.BOLD, tabs.getFont().getSize2D() + 1f));
-                    tabs.setBorder(new EmptyBorder(6,6,0,6));
-                }
-            }
-        }
-    }
-
-    private void applyRecursive(Component c) {
-        if (c instanceof AbstractButton b) {
-            b.setFont(b.getFont().deriveFont(Font.BOLD));
-            b.setFocusPainted(false);
-            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            if (!(b.getBorder() instanceof RoundedBorder)) {
-                b.setBorder(new RoundedBorder(14));
-            }
-            if (b.getBackground() == null || b.getBackground() instanceof javax.swing.plaf.UIResource) {
-                b.setBackground(new Color(59,130,246)); // blue-500
-                b.setForeground(Color.WHITE);
-            }
-            b.setOpaque(true);
-            b.setRolloverEnabled(true);
-            b.addMouseListener(new java.awt.event.MouseAdapter() {
-                @Override public void mouseEntered(java.awt.event.MouseEvent e) {
-                    b.setBackground(new Color(37,99,235)); // darker on hover
-                }
-                @Override public void mouseExited(java.awt.event.MouseEvent e) {
-                    b.setBackground(new Color(59,130,246));
-                }
-            });
-        } else if (c instanceof JPanel p) {
-            if (!p.isOpaque()) p.setOpaque(true);
-            if (p.getBackground() == null || p.getBackground() instanceof javax.swing.plaf.UIResource) {
-                p.setBackground(new Color(255,255,255));
-            }
-            if (p.getBorder() == null) {
-                p.setBorder(new EmptyBorder(6,6,6,6));
-            }
-            for (Component child : p.getComponents()) applyRecursive(child);
-        } else if (c instanceof JScrollPane sp) {
-            sp.setBorder(new LineBorder(new Color(229,231,235)));
-            if (sp.getViewport() != null && sp.getViewport().getView() != null) {
-                applyRecursive(sp.getViewport().getView());
-            }
-        } else if (c instanceof JComponent jc) {
-            if (jc.getBorder() == null) {
-                jc.setBorder(new EmptyBorder(4,6,4,6));
-            }
-        }
-    }
-
-    private void installZebra(JTable table) {
-        if (table == null) return;
-        table.setShowGrid(false);
-        table.setIntercellSpacing(new Dimension(0, 0));
-        table.setRowHeight(Math.max(24, table.getRowHeight()));
-        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable t, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                Component comp = super.getTableCellRendererComponent(t, value, isSelected, hasFocus, row, column);
-                if (!isSelected) {
-                    comp.setBackground((row % 2 == 0) ? new Color(249,250,251) : Color.WHITE);
-                }
-                if (comp instanceof JComponent jc) {
-                    jc.setBorder(new EmptyBorder(6,8,6,8));
-                }
-                return comp;
-            }
-        });
-        JTableHeader header = table.getTableHeader();
-        if (header != null) {
-            header.setOpaque(true);
-            header.setBackground(new Color(230, 243, 255));
-            header.setForeground(new Color(17, 24, 39));
-            header.setFont(header.getFont().deriveFont(Font.BOLD));
-        }
-    }
-
-    /** Simple rounded border that keeps button shapes smooth. */
-    static class RoundedBorder implements Border {
-        private final int radius;
-        RoundedBorder(int radius) { this.radius = radius; }
-        @Override public Insets getBorderInsets(Component c) { return new Insets(radius/2, radius, radius/2, radius); }
-        @Override public boolean isBorderOpaque() { return false; }
-        @Override public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(new Color(229,231,235));
-            g2.drawRoundRect(x, y, width-1, height-1, radius, radius);
-            g2.dispose();
-        }
-    }
-
 }
 
 

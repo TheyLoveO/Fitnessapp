@@ -1,11 +1,13 @@
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-import java.awt.*;
-
+/**
+ * A GUI class for a rounded button element.
+ */
 public class RoundedButton extends JButton {
     private boolean hover = false, pressed = false;
-    private Color c1 = Theme.RED, c2 = Theme.YELLOW;
+    private Color c1 = Theme.RED, c2 = Theme.RED;
     RoundedButton(String text) {
         super(text);
         setContentAreaFilled(false);
