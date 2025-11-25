@@ -48,6 +48,7 @@ public class FitnessFrame extends JFrame {
     DefaultTableModel todayNutritionModel = new DefaultTableModel(new Object[]{"Time", "Food", "Grams", "Calories"}, 0);
     JTable todayNutritionTable = new JTable(todayNutritionModel);
 
+
     // Daily Burn Goal controls (first page)
     JSpinner burnGoalSpinner = new JSpinner(new SpinnerNumberModel(500, 0, 20000, 50));
     JButton setBurnGoalBtn = new RoundedButton("Set Burn Goal");
@@ -131,16 +132,16 @@ public class FitnessFrame extends JFrame {
         welcomeLbl.setFont(welcomeLbl.getFont().deriveFont(Font.BOLD, 14f));
         welcomeLbl.setForeground(Theme.TEXT);
 
-        JTableHeader hn = todayNutritionTable.getTableHeader();
-        hn.setBackground(Theme.YELLOW); hn.setForeground(Theme.TEXT); hn.setFont(hn.getFont().deriveFont(Font.BOLD));
+        JTableHeader hn = todayNutritionTable.getTableHeader();//fixed color
+        hn.setBackground(Theme.YELLOW); hn.setForeground(Theme.BG); hn.setFont(hn.getFont().deriveFont(Font.BOLD));
         todayNutritionTable.setRowHeight(22);
 
         JTableHeader pn = progressNutritionTable.getTableHeader();
-        pn.setBackground(Theme.YELLOW); pn.setForeground(Theme.TEXT); pn.setFont(pn.getFont().deriveFont(Font.BOLD));
+        pn.setBackground(Theme.YELLOW); pn.setForeground(Theme.BG); pn.setFont(pn.getFont().deriveFont(Font.BOLD));
         progressNutritionTable.setRowHeight(22);
 
         JTableHeader hw = progressWorkoutsTable.getTableHeader();
-        hw.setBackground(Theme.RED); hw.setForeground(Theme.TEXT); hw.setFont(hw.getFont().deriveFont(Font.BOLD));
+        hw.setBackground(Theme.RED); hw.setForeground(Theme.BG); hw.setFont(hw.getFont().deriveFont(Font.BOLD));
         progressWorkoutsTable.setRowHeight(22);
 
         // Saved Workouts table: widths (header is hidden)
@@ -162,7 +163,7 @@ public class FitnessFrame extends JFrame {
         savedWorkoutDetail.setEditable(false);
         savedWorkoutDetail.setLineWrap(true);
         savedWorkoutDetail.setWrapStyleWord(true);
-    
+
         //installEnhancedLook();
     }
 
@@ -245,7 +246,9 @@ public class FitnessFrame extends JFrame {
         g.insets = new Insets(6,6,6,6);
         g.fill = GridBagConstraints.HORIZONTAL;
         int gy = 0;
-        g.gridx = 0; g.gridy = gy; goalPanel.add(new JLabel("Calories to burn today (kcal):"), g);
+        JLabel burn = new JLabel("Calories to burn today (kcal):");//Changed to make text visible
+        burn.setForeground(Theme.TEXT);
+        g.gridx = 0; g.gridy = gy; goalPanel.add(burn, g);
         g.gridx = 1; g.gridy = gy++; goalPanel.add(burnGoalSpinner, g);
         g.gridx = 0; g.gridy = gy; g.gridwidth = 2; goalPanel.add(setBurnGoalBtn, g);
 
@@ -257,13 +260,19 @@ public class FitnessFrame extends JFrame {
         c.fill = GridBagConstraints.HORIZONTAL;
 
         int y=0;
-        c.gridx=0; c.gridy=y; form.add(new JLabel("Food:"), c);
+        JLabel foodLabel1 = new JLabel("Food:");//these three changed to increase readability
+        foodLabel1.setForeground(Theme.TEXT);
+        c.gridx=0; c.gridy=y; form.add(foodLabel1, c);
         c.gridx=1; c.gridy=y++; form.add(foodPicker, c);
 
-        c.gridx=0; c.gridy=y; form.add(new JLabel("Grams:"), c);
+        JLabel gramsLabel1 = new JLabel("Grams:");
+        gramsLabel1.setForeground(Theme.TEXT);
+        c.gridx=0; c.gridy=y; form.add(gramsLabel1, c);
         c.gridx=1; c.gridy=y++; form.add(gramsSpinner, c);
 
-        c.gridx=0; c.gridy=y; form.add(new JLabel("Calories (auto):"), c);
+        JLabel caloriesAuto = new JLabel("Calories (auto):");
+        caloriesAuto.setForeground((Theme.TEXT));
+        c.gridx=0; c.gridy=y; form.add(caloriesAuto, c);
         c.gridx=1; c.gridy=y++; form.add(caloriesSpinner, c);
 
         c.gridx=0; c.gridy=y; c.gridwidth=2; form.add(addFoodBtn, c);
@@ -273,7 +282,9 @@ public class FitnessFrame extends JFrame {
 
         JPanel center = new JPanel(new BorderLayout());
         center.setOpaque(false);
-        center.setBorder(new TitledBorder("Today's Nutrition"));
+        TitledBorder todaysNutrition = new TitledBorder("Today's Nutrition");//changed to make text visible
+        todaysNutrition.setTitleColor(Theme.TEXT);
+        center.setBorder(todaysNutrition);
         center.add(new JScrollPane(todayNutritionTable), BorderLayout.CENTER);
         p.add(center, BorderLayout.CENTER);
 
@@ -300,13 +311,19 @@ public class FitnessFrame extends JFrame {
         c.fill = GridBagConstraints.HORIZONTAL;
 
         int y=0;
-        c.gridx=0; c.gridy=y; form.add(new JLabel("Type:"), c);
+        JLabel type1 = new JLabel("Type:");
+        type1.setForeground(Theme.TEXT);
+        c.gridx=0; c.gridy=y; form.add(type1, c);
         c.gridx=1; c.gridy=y++; form.add(workoutType, c);
 
-        c.gridx=0; c.gridy=y; form.add(new JLabel("Body Part (if Lift):"), c);
+        JLabel bpifLift = new JLabel("Body Part (if Lift):");
+        bpifLift.setForeground(Theme.TEXT);
+        c.gridx=0; c.gridy=y; form.add(bpifLift, c);
         c.gridx=1; c.gridy=y++; form.add(bodyPart, c);
 
-        c.gridx=0; c.gridy=y; form.add(new JLabel("Start (HH:MM):"), c);
+        JLabel startTime = new JLabel("Star (HH:MM):");
+        startTime.setForeground(Theme.TEXT);
+        c.gridx=0; c.gridy=y; form.add(startTime, c);
         JPanel timePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         timePanel.setOpaque(false);
         timePanel.add(startHour);
@@ -314,10 +331,14 @@ public class FitnessFrame extends JFrame {
         timePanel.add(startMin);
         c.gridx=1; c.gridy=y++; form.add(timePanel, c);
 
-        c.gridx=0; c.gridy=y; form.add(new JLabel("Duration (min):"), c);
+        JLabel durationMin = new JLabel("Duration (min):");
+        durationMin.setForeground(Theme.TEXT);
+        c.gridx=0; c.gridy=y; form.add(durationMin, c);
         c.gridx=1; c.gridy=y++; form.add(workoutMins, c);
 
-        c.gridx=0; c.gridy=y; form.add(new JLabel("Estimated Calories (kcal):"), c);
+        JLabel estCal = new JLabel("Estimated Calories (kcal):");
+        estCal.setForeground(Theme.TEXT);
+        c.gridx=0; c.gridy=y; form.add(estCal, c);
         c.gridx=1; c.gridy=y++; form.add(workoutKcal, c);
 
         // Strength Qs
@@ -326,11 +347,17 @@ public class FitnessFrame extends JFrame {
         s.insets = new Insets(6,6,6,6);
         s.fill = GridBagConstraints.HORIZONTAL;
         int sy=0;
-        s.gridx=0; s.gridy=sy; strengthPanel.add(new JLabel("What exercise?"), s);
+        JLabel whatEx = new JLabel("What exercise?");//fixed color
+        whatEx.setForeground(Theme.TEXT);
+        JLabel howManys = new JLabel("How many sets?");
+        howManys.setForeground(Theme.TEXT);
+        JLabel howManyr = new JLabel("How many reps?");
+        howManyr.setForeground(Theme.TEXT);
+        s.gridx=0; s.gridy=sy; strengthPanel.add(whatEx, s);
         s.gridx=1; s.gridy=sy++; strengthPanel.add(exNameField, s);
-        s.gridx=0; s.gridy=sy; strengthPanel.add(new JLabel("How many sets?"), s);
+        s.gridx=0; s.gridy=sy; strengthPanel.add(howManys, s);
         s.gridx=1; s.gridy=sy++; strengthPanel.add(setsSpinner, s);
-        s.gridx=0; s.gridy=sy; strengthPanel.add(new JLabel("How many reps?"), s);
+        s.gridx=0; s.gridy=sy; strengthPanel.add(howManyr, s);
         s.gridx=1; s.gridy=sy++; strengthPanel.add(repsSpinner, s);
 
         // Cardio Qs
@@ -339,10 +366,14 @@ public class FitnessFrame extends JFrame {
         k.insets = new Insets(6,6,6,6);
         k.fill = GridBagConstraints.HORIZONTAL;
         int ky=0;
-        k.gridx=0; k.gridy=ky; cardioPanel.add(new JLabel("Distance unit:"), k);
+        JLabel distUnits = new JLabel("Distance unit:");//fixed color
+        distUnits.setForeground(Theme.TEXT);
+        k.gridx=0; k.gridy=ky; cardioPanel.add(distUnits, k);
         k.gridx=1; k.gridy=ky++; cardioPanel.add(distanceUnit, k);
 
-        k.gridx=0; k.gridy=ky; cardioPanel.add(new JLabel("How many miles/steps?"), k);
+        JLabel howManym = new JLabel("How many miles/steps?");
+        howManym.setForeground(Theme.TEXT);
+        k.gridx=0; k.gridy=ky; cardioPanel.add(howManym, k);
         JPanel distPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         distPanel.setOpaque(false);
         distPanel.add(milesSpinner);
@@ -443,7 +474,7 @@ public class FitnessFrame extends JFrame {
     private JLabel makeLegendLabel(String text){
         JLabel l = new JLabel(text);
         l.setFont(l.getFont().deriveFont(Font.BOLD));
-        l.setForeground(Theme.TEXT);
+        l.setForeground(Theme.BG);
         return l;
     }
 
@@ -509,9 +540,9 @@ public class FitnessFrame extends JFrame {
      * Sets the foreground color to red dark for a given JLabel.
      * @param lbl the JLabel object
      */
-    private JLabel colorizeInfo(JLabel lbl) { 
-        lbl.setForeground(Theme.RED_DARK); 
-        return lbl; 
+    private JLabel colorizeInfo(JLabel lbl) {
+        lbl.setForeground(Theme.RED_DARK);
+        return lbl;
     }
 
     /**
@@ -702,10 +733,10 @@ public class FitnessFrame extends JFrame {
      * @param date a LocalDate object representing a point in time
      */
     private void selectDay(LocalDate date) {
-        for (int i = 0; i < daysListModel.size(); i++)  { 
-            if (daysListModel.get(i).equals(date)) { 
-                daysList.setSelectedIndex(i); 
-                return; 
+        for (int i = 0; i < daysListModel.size(); i++)  {
+            if (daysListModel.get(i).equals(date)) {
+                daysList.setSelectedIndex(i);
+                return;
             }
         }
     }
@@ -804,5 +835,3 @@ public class FitnessFrame extends JFrame {
         return true;
     }
 }
-
-
